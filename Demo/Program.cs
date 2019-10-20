@@ -125,8 +125,33 @@ namespace Demo
     /// <summary>
     /// 鸭子V2版本
     /// </summary>
-    public class DuckV2
+    public abstract class DuckV2
     {
+        public IFlyBehavior flyBehavior;
+
+        public IQuackBehavior quackBehavior;
+
+        public void SetFlyBehavior(IFlyBehavior fb)
+        {
+            flyBehavior = fb;
+        }
+
+        public void SetQuackBehavior(IQuackBehavior qb)
+        {
+            quackBehavior = qb;
+        }
+
+        public void PerformFly()
+        {
+            flyBehavior.Fly();
+        }
+
+        public void PerformQuack()
+        {
+            quackBehavior.Quack();
+        }
+
+        public abstract void Display();
 
         /// <summary>
         /// 游泳
@@ -141,44 +166,54 @@ namespace Demo
     /// <summary>
     /// 野鸭V2版本
     /// </summary>
-    public class MallardDuckV2 : DuckV2, IFlyable, IQuackable
+    public class MallardDuckV2 : DuckV2
     {
-        public void Fly()
+        public MallardDuckV2()
         {
-            FlyWithWings flyWithWings = new FlyWithWings();
-            flyWithWings.Fly();
-            //Console.WriteLine("野鸭在飞");
+            flyBehavior = new FlyWithWings();
+            quackBehavior = new Quack();
         }
 
-        public void Quack()
+        public override void Display()
         {
-           
-            Console.WriteLine("野鸭在叫");
+            Console.WriteLine("绿毛鸭子");
         }
     }
 
     /// <summary>
     /// 橡皮鸭v2
     /// </summary>
-    public class RubberDuckV2 : DuckV2, IQuackable
+    public class RubberDuckV2 : DuckV2
     {
-        public void Quack()
+        public RubberDuckV2()
         {
-            Squeak squeak = new Squeak();
-            squeak.Quack();
+            flyBehavior = new FlyNoWay();
+            quackBehavior = new Squeak();
+        }
+
+        public override void Display()
+        {
+            Console.WriteLine("橡皮造型");
         }
     }
 
     /// <summary>
     /// 火箭鸭
     /// </summary>
-    public class RocketsDuck : DuckV2, IFlyBehavior
+    public class RocketsDuck : DuckV2
     {
-        public void Fly()
+
+        public RocketsDuck()
         {
-            FlyWithRockets flyWithRockets = new FlyWithRockets();
-            flyWithRockets.Fly();
+            flyBehavior = new FlyWithRockets();
+            quackBehavior = new RocktsQuack();
         }
+
+        public override void Display()
+        {
+            Console.WriteLine("钢铁造型");
+        }
+
     }
 
     /// <summary>
@@ -186,7 +221,33 @@ namespace Demo
     /// </summary>
     public class DecoyDuckV2 : DuckV2
     {
+        public DecoyDuckV2()
+        {
+            quackBehavior = new MuteQuack();
+            flyBehavior = new FlyNoWay();
+        }
 
+        public override void Display()
+        {
+            Console.WriteLine("木头造型");
+        }
+    }
+
+    /// <summary>
+    /// 模型鸭子 一开始是不会飞的
+    /// </summary>
+    public class ModelDuck : DuckV2
+    {
+        public ModelDuck()
+        {
+            quackBehavior = new MuteQuack();
+            flyBehavior = new FlyNoWay();
+        }
+
+        public override void Display()
+        {
+            Console.WriteLine("模型鸭子");
+        }
     }
 
 
@@ -227,7 +288,7 @@ namespace Demo
     {
         public void Fly()
         {
-            Console.WriteLine("不做操作");
+            Console.WriteLine("不会飞");
         }
     }
 
@@ -268,7 +329,18 @@ namespace Demo
     {
         public void Quack()
         {
-            Console.WriteLine("不出声");
+            Console.WriteLine("不会叫");
+        }
+    }
+
+    /// <summary>
+    /// 火箭发动的声音
+    /// </summary>
+    public class RocktsQuack : IQuackBehavior
+    {
+        public void Quack()
+        {
+            Console.WriteLine("突突突突");
         }
     }
 
@@ -331,6 +403,75 @@ namespace Demo
     }
 
 
+    /// <summary>
+    /// 游戏角色设计
+    /// </summary>
+    public abstract class Character
+    {
+        public IWeaponBehavior WeaponBehavior;
+
+        /// <summary>
+        /// 战斗
+        /// </summary>
+        public abstract void Fight();
+
+        public void SetWeapon(IWeaponBehavior w)
+        {
+            WeaponBehavior = w;
+        }
+
+        /// <summary>
+        /// 执行武器
+        /// </summary>
+        public void PerformUseWeapon()
+        {
+            WeaponBehavior.UseWeapon();
+        }
+    }
+
+    /// <summary>
+    /// 骑士
+    /// </summary>
+    public class Knight : Character
+    {
+
+        public override void Fight()
+        {
+            Console.WriteLine($"骑士准备攻击");
+        }
+    }
+
+    /// <summary>
+    /// 武器接口
+    /// </summary>
+    public interface IWeaponBehavior
+    {
+        void UseWeapon();
+    }
+
+    /// <summary>
+    /// 匕首
+    /// </summary>
+    public class KnifeBehavior : IWeaponBehavior
+    {
+        public void UseWeapon()
+        {
+            Console.WriteLine("匕首刺杀");
+        }
+    }
+
+    /// <summary>
+    /// 宝剑
+    /// </summary>
+    public class SwordBehavior : IWeaponBehavior
+    {
+        public void UseWeapon()
+        {
+            Console.WriteLine("宝剑挥舞");
+        }
+    }
+
+
 
     class Program
     {
@@ -386,22 +527,33 @@ namespace Demo
             // 野鸭V2
             MallardDuckV2 mallardDuckV2 = new MallardDuckV2();
             Console.WriteLine("--------------野鸭V2--------------");
-            mallardDuckV2.Fly();
-            mallardDuckV2.Quack();
+            mallardDuckV2.PerformFly();
+            mallardDuckV2.PerformQuack();
+            //mallardDuckV2.Fly();
+            //mallardDuckV2.Quack();
 
             // 木头鸭子
             DecoyDuckV2 decoyDuckV2 = new DecoyDuckV2();
             Console.WriteLine("--------------木头鸭子V2--------------");
             // 只有游泳方法
             decoyDuckV2.Swim();
+            decoyDuckV2.PerformFly();
+            decoyDuckV2.PerformQuack();
 
             RubberDuckV2 rubberDuckV2 = new RubberDuckV2();
             Console.WriteLine("--------------橡皮鸭子V2--------------");
-            rubberDuckV2.Quack();
+            rubberDuckV2.PerformQuack();
 
             RocketsDuck rocketsDuck = new RocketsDuck();
             Console.WriteLine("--------------火箭鸭--------------");
-            rocketsDuck.Fly();
+            rocketsDuck.PerformFly();
+
+            DuckV2 modelDuck = new ModelDuck();
+            Console.WriteLine("--------------模型鸭子--------------");
+            modelDuck.PerformFly();
+            // 添加火箭引擎
+            modelDuck.SetFlyBehavior(new FlyWithRockets());
+            modelDuck.PerformFly();
 
             Console.WriteLine("--------------针对实现编程和针对接口/超类型编程--------------");
             // 针对实现编程
@@ -416,7 +568,13 @@ namespace Demo
             Animal animal2 = animal.GetAnimal();
             animal2.MakeSound();
 
-           
+            Console.WriteLine("--------------游戏设计--------------");
+            Knight knight = new Knight();
+            knight.SetWeapon(new SwordBehavior());
+            knight.Fight();
+            knight.PerformUseWeapon();
+
+
         }
     }
 }
