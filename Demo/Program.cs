@@ -53,13 +53,13 @@ namespace Demo
         /// <summary>
         /// 订阅
         /// </summary>
-        void Register(IObserver observer);
+        void Register(IObserver2 observer);
 
         /// <summary>
         /// 移除订阅
         /// </summary>
         /// <param name="key"></param>
-        void Remove(IObserver observer);
+        void Remove(IObserver2 observer);
 
         /// <summary>
         /// 发送通知后更新观察者的update
@@ -80,10 +80,10 @@ namespace Demo
     /// </summary>
     public class ConcreteSubject : ISubject
     {
-        public List<IObserver> Observers;
+        public List<IObserver2> Observers;
         public ConcreteSubject()
         {
-            Observers = new List<IObserver>();
+            Observers = new List<IObserver2>();
         }
         public void Notify()
         {
@@ -94,24 +94,29 @@ namespace Demo
             }
             foreach(var item in Observers)
             {
-                item.Update();
+                item.Update(0);
             }
         }
 
-        public void Register(IObserver observer)
+        public void Register(IObserver2 observer)
         {
             Observers.Add(observer);
         }
 
-        public void Remove(IObserver observer)
+        public void Remove(IObserver2 observer)
         {
             Observers.Remove(observer);
         }
     }
 
-    public class ConcreteObserver : IObserver
+    public class ConcreteObserver : IObserver2
     {
-        public void Update()
+        public ConcreteObserver(ISubject subject)
+        {
+            subject.Register(this);
+        }
+
+        public void Update(float temperature)
         {
             Console.WriteLine("订阅者执行更新");
         }
@@ -197,6 +202,7 @@ namespace Demo
         public CurrentConditionDisplay(ISubject weatherData)
         {
             WeatherData = weatherData;
+            WeatherData.Register(this);
         }
 
         public void Display()
@@ -218,12 +224,12 @@ namespace Demo
     /// </summary>
     public class WeatherDataSubject : WeatherData, ISubject
     {
-        public List<IObserver> Observers;
+        public List<IObserver2> Observers;
 
 
         public WeatherDataSubject()
         {
-            Observers = new List<IObserver>();
+            Observers = new List<IObserver2>();
         }
 
         public override void MeasurementsChanged()
@@ -241,16 +247,16 @@ namespace Demo
             }
             foreach (var item in Observers)
             {
-                item.Update();
+                item.Update(0);
             }
         }
 
-        public void Register(IObserver observer)
+        public void Register(IObserver2 observer)
         {
             Observers.Add(observer);
         }
 
-        public void Remove(IObserver observer)
+        public void Remove(IObserver2 observer)
         {
             Observers.Remove(observer);
         }
@@ -269,15 +275,141 @@ namespace Demo
 
 
             ConcreteSubject concreteSubject = new ConcreteSubject();
-            ConcreteObserver observer = new ConcreteObserver();
-            // 订阅
-            concreteSubject.Register(observer);
+            ConcreteObserver observer = new ConcreteObserver(concreteSubject);
             // 主题发送通知
             concreteSubject.Notify();
             // 移除订阅
             concreteSubject.Remove(observer);
             // 主题发送通知
             concreteSubject.Notify();
+        }
+    }
+
+    public struct Message
+    {
+        string text;
+
+        public Message(string newText)
+        {
+            this.text = newText;
+        }
+
+        public string Text
+        {
+            get
+            {
+                return this.text;
+            }
+        }
+    }
+
+    public class Headquarters : IObservable<Message>
+    {
+        public Headquarters()
+        {
+            observers = new List<IObserver<Message>>();
+        }
+
+        private List<IObserver<Message>> observers;
+
+        public IDisposable Subscribe(IObserver<Message> observer)
+        {
+            if (!observers.Contains(observer))
+                observers.Add(observer);
+            return new Unsubscriber(observers, observer);
+        }
+
+        private class Unsubscriber : IDisposable
+        {
+            private List<IObserver<Message>> _observers;
+            private IObserver<Message> _observer;
+
+            public Unsubscriber(List<IObserver<Message>> observers, IObserver<Message> observer)
+            {
+                this._observers = observers;
+                this._observer = observer;
+            }
+
+            public void Dispose()
+            {
+                if (_observer != null && _observers.Contains(_observer))
+                    _observers.Remove(_observer);
+            }
+        }
+
+        public void SendMessage(Nullable<Message> loc)
+        {
+            foreach (var observer in observers)
+            {
+                if (!loc.HasValue)
+                    observer.OnError(new Exception());
+                else
+                    observer.OnNext(loc.Value);
+            }
+        }
+
+        public void EndTransmission()
+        {
+            foreach (var observer in observers.ToArray())
+                if (observers.Contains(observer))
+                    observer.OnCompleted();
+
+            observers.Clear();
+        }
+    }
+
+    public class Test
+    {
+
+    }
+
+    public class TestSub : IObservable<Test>
+    {
+        private readonly List<IObserver<Test>> observers;
+        public TestSub()
+        {
+            observers = new List<IObserver<Test>>();
+        }
+        public IDisposable Subscribe(IObserver<Test> observer)
+        {
+            return new UnSub(observers, observer);
+        }
+
+        private class UnSub : IDisposable
+        {
+            private List<IObserver<Test>> Observables;
+            private IObserver<Test> Observer;
+            public UnSub(List<IObserver<Test>> observables, IObserver<Test> observer)
+            {
+                Observables = observables;
+                Observer = observer;
+
+            }
+
+            public void Dispose()
+            {
+                if (Observables != null && Observables.Contains(Observer))
+                    Observables.Remove(Observer);
+            }
+        }
+    }
+
+    // 使用自带订阅
+    public class TestObserver : IObserver<Test>
+    {
+        public void OnCompleted()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnError(Exception error)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnNext(Test value)
+        {
+            throw new NotImplementedException();
         }
     }
 }
